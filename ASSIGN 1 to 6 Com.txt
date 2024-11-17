@@ -1,0 +1,441 @@
+                                                                 ASSGN 1
+
+section .data
+    hello db 'Hello World',0xA  
+
+section .text
+    global _start               
+
+_start:
+
+    mov rax, 1                  
+    mov rdi, 1                  
+    mov rsi, hello              
+    mov rdx, 12                 
+    syscall                     
+
+    mov rax, 60                 
+    xor rdi, rdi                
+    syscall
+
+
+
+
+                                                                   ASSGN 2 
+
+section .data
+    prompt: db "Enter a 64-bit number: ", 0
+    result: db "The entered number is: ", 0
+
+section .bss
+    number: resq 1
+
+section .text
+    global _start
+
+_start:
+    
+    mov rax, 1 
+    mov rdi, 1 
+    mov rsi, prompt 
+    mov rdx, 24 
+    syscall
+
+    ; Read the number
+    mov rax, 0 
+    mov rdi, 0 
+    mov rsi, number 
+    mov rdx, 8 
+    syscall
+
+    mov rax, 1 
+    mov rdi, 1 
+    mov rsi, result 
+    mov rdx, 22 
+    syscall
+
+    mov rax, 1 
+    mov rdi, 1 
+    mov rsi, number 
+    mov rdx, 8 
+    syscall
+
+    mov rax, 60 
+    mov rdi, 0 
+    syscall
+
+
+
+                                                            ASSGN add 2 num
+
+segment .data
+  msg1 db "Enter a digit", 0xA, 0xD
+  len1 equ $- msg1
+  msg2 db "Please enter the second digit", 0xA, 0xD
+  len2 equ $- msg2
+  msg3 db "The sum is :"
+  len3 equ $- msg3
+
+segment .bss
+  num1 resb 2
+  num2 resb 2
+  res resb 2
+
+segment .text
+global _start
+_start:
+  call _text1
+  call _getName1
+  call _text2
+  call _getName2
+  call _text3
+
+  mov rax, [num1]
+  sub rax, '0'
+
+  mov rbx, [num2]
+  sub rbx, '0'
+
+  add rax, rbx
+  add rax, '0'
+  mov [res], rax
+  mov rax, 1
+  mov rdi, 1
+  mov rsi, res
+  mov rdx, 2
+  syscall
+
+  mov rax, 60
+  mov rdi, 0
+  syscall
+_text1:
+  mov rax, 1
+  mov rdi, 1
+  mov rsi, msg1
+  mov rdx, len1
+  syscall
+  ret
+
+_getName1:
+  mov rax, 0
+  mov rdi, 0
+  mov rsi, num1
+  mov rdx, 2
+  syscall
+  ret
+
+_text2:
+  mov rax, 1
+  mov rdi, 1
+  mov rsi, msg2
+  mov rdx, len2
+  syscall
+  ret
+
+_getName2:
+  mov rax, 0
+  mov rdi, 0
+  mov rsi, num2
+  mov rdx, 2
+  syscall
+  ret
+
+_text3:
+  mov rax, 1
+  mov rdi, 1
+  mov rsi, msg3
+  mov rdx, len3
+  syscall
+  ret
+
+
+                                                               ASSGN HEX to BCD
+
+section .data
+    nline       db  10,10
+    nline_len:  equ $-nline
+    
+    h2bmsg      db  10,"Hex to BCD "
+                db  10,"Enter 4-digit Hex number: "
+    h2bmsg_len: equ $-h2bmsg
+
+    bmsg        db  10,13,"Equivalent BCD number is: "
+    bmsg_len:   equ $-bmsg
+
+    emsg        db  10,"You entered Invalid Data!!!",10
+    emsg_len:   equ $-emsg
+
+section .bss
+    buf         resb    6
+    buf_len:    equ $-buf
+
+    digitcount  resb    1
+
+    ans     resw    1
+    char_ans    resb    4
+
+%macro  print   2
+    mov     rax,1       
+    mov     rdi,1       
+    mov     rsi,%1      
+    mov     rdx,%2      
+    syscall         
+%endmacro
+
+%macro  read   2
+    mov     rax,0       
+    mov     rdi,0      
+    mov     rsi,%1     
+    mov     rdx,%2      
+    syscall         
+%endmacro
+
+%macro  exit    0
+    print   nline, nline_len
+    mov rax, 60   
+    xor rdi, rdi        
+    syscall         
+%endmacro
+
+section .text
+    global _start
+_start:
+    print   h2bmsg, h2bmsg_len
+
+    call    accept_16
+    mov     ax,bx
+
+    mov     rbx,10
+back:
+    xor     rdx,rdx
+    div     rbx    
+
+    push    dx
+    inc     byte[digitcount]
+
+    cmp     rax,0h
+    jne     back   
+
+    print   bmsg, bmsg_len
+print_bcd:
+    pop     dx
+    add     dl,30h     
+    mov [char_ans],dl  
+    
+    print   char_ans,1  
+
+    dec     byte[digitcount]
+    jnz     print_bcd
+
+    exit
+
+accept_16:
+    read    buf,5       
+
+    xor     bx,bx
+    mov     rcx,4
+    mov     rsi,buf
+next_digit:
+    shl bx,04
+    mov al,[rsi]
+        cmp     al,"0"     
+        jb  error      
+        cmp   al,"9"   
+        jbe  sub30    
+
+        cmp al,"A"   
+        jb   error         
+        cmp al,"F"
+        jbe   sub37         
+
+        cmp     al,"a"         
+        jb error      
+        cmp al,"f"
+        jbe  sub57         
+
+error:  print   emsg,emsg_len    
+        exit
+
+sub57:  sub al,20h         
+sub37:  sub   al,07h        
+sub30:  sub   al,30h        
+    
+    add bx,ax       
+    inc rsi     
+    loop    next_digit
+ret
+
+
+                                                         ASSGN multiply 8 bit hex num
+
+section .data 
+    msg db "ALP to multiply two 8 bit hex numbers",10     
+    msg_len equ $ - msg 
+    opr1 db "multiplicand :  "     
+    opr1_len equ $ - opr1 
+    opr2 db 10,"multiplier   :  "     
+    opr2_len equ $ - opr2 
+    menu db 10,10,13,"1. Successive Addition Method",10  	 	 
+    db 13,"2. Add and shift method",10  	 	
+    db 13,"3. Exit",10  	 	 
+    db 10,"Enter your choice (1/2/3) : "     
+    menu_len equ $ - menu 
+    alert db 10,"WRONG CHOICE" 
+    alert_len equ $ - alert 
+    res db 10,"The product is :  " 
+    res_len equ $ - res 
+    msg_end db 10,"End of ALP"     
+    msg_end_len equ $ - msg_end 
+section .bss  	
+    multiplier resb 1    ;variable after ASCII to Hex     
+    multiplicand resb 1     ;variable after ASCII to Hex     
+    num resb 03             ;variable before ASCII to Hex     
+    result resb 04          ;for display procedure     
+    choice resb 2           ;for choice of user     
+    product resw 1          ;to store the product 
+%macro IO 4     
+mov rax,%1     
+mov rdi,%2     
+mov rsi,%3     
+mov rdx,%4     
+syscall 
+%endmacro 
+
+section .text 
+
+global _start
+
+_start: 
+     xor rax,rax     
+     xor rbx,rbx      
+     xor rcx,rcx      
+     xor rdx,rdx 
+        
+    IO 1, 1, msg, msg_len 
+    IO 0 ,0,num,3 
+    IO 1, 1, opr1, opr1_len 
+    IO 1,1,num,2     ;to access the data without enter char     
+    call convert     
+    mov [multiplicand],bl 
+     
+    IO 0 ,0,num,3 
+    IO 1, 1, opr2, opr2_len    
+    IO 1,1,num,2     
+    call convert     
+    mov [multiplier],bl 
+ 
+    IO 1, 1, menu, menu_len 
+    IO 0, 0, choice, 2 
+    IO 1, 1, choice, 2 
+     
+    cmp byte[choice],31h     
+    jne case2     
+    call successive_addition     
+    jmp endOfProgram 
+     
+case2: 
+    cmp byte[choice],32h 
+    jne case3 
+    call add_shift 
+    jmp endOfProgram 
+ 
+case3: 
+    cmp byte[choice],33h     
+    je endOfProgram 
+    IO 1,1,alert,alert_len 
+ 
+endOfProgram:    
+    IO 1,1,msg_end,msg_end_len     
+    mov rax, 60     
+    mov rdi, 0     
+    syscall 
+ 
+convert:                                          ; for ASCII to Hex conversion  
+    xor rbx,rbx  
+    xor rcx,rcx  
+    xor rax,rax 
+ 
+    mov rcx,02  
+    mov rsi,num         
+up1:  
+    rol bl,04 
+    mov al,[rsi]  
+    cmp al,39h  
+    jbe p1  
+    sub al,07h 
+    jmp p2 
+p1: 
+    sub al,30h  
+p2: 
+    add bl,al     ;bl stores the ASCII equivalent(byte) of the multiplicand/multiplier  
+    inc rsi  
+    loop up1 
+    ret 
+ 
+disp:                       ;for Hex to ASCII conversion 
+    mov rcx,4  
+    mov rdi,result  
+dup1:  
+    rol bx,4  
+    mov al,bl  
+    and al,0fh  
+    cmp al,09h  
+    jbe p3  
+    add al,07h  
+    jmp p4  
+p3: 
+    add al,30h  
+p4:
+    mov [rdi],al       
+    inc rdi  
+    loop dup1 
+        
+    IO 1,1,result,4 
+ 
+ret 
+ 
+successive_addition:     
+    xor rcx,rcx 
+    xor rax,rax 
+    mov word[product],0 
+    mov bl,[multiplier] 
+    mov al,[multiplicand] 
+      
+next:         
+    add [product],ax     
+    dec bl     
+    jnz next     
+    IO 1, 1, res, res_len     
+    mov bx,[product]     
+    call disp 
+    ret 
+ 
+ 
+add_shift:  
+    mov word[product],0 
+    xor rbx,rbx  
+    xor rcx,rcx  
+    xor rdx,rdx  
+    xor rax,rax 
+    mov dl,08  
+    mov al,[multiplicand]  
+    mov bl,[multiplier]  
+
+p11: 
+    shr bx,01  
+    jnc p  
+    add cx,ax  
+p: 
+    shl ax,01  
+    dec dl  
+    jnz p11 
+    mov [product],rcx  
+    IO 1,1,res,res_len 
+    mov rbx,[product]  
+    call disp 
+ 
+ret
+
+
+                                                               ASSGN REVERSE
+
